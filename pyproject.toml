@@ -1,0 +1,37 @@
+# 供 uv sync / uv run 安装脚本依赖（construct_verifiable_medical_problems.py 等）
+[project]
+name = "huatuogpt-o1"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "requests",
+    "tqdm",
+    "retrying",
+    "transformers>=4.45.0",
+    "tokenizers>=0.20.3",
+    "torch>=2.5.0",
+    "accelerate>=0.34.0",
+    "trl>=0.14.0,<1.0.0",
+    "peft>=0.13.0",
+    "bitsandbytes>=0.43.0",
+    "datasets>=2.20.0",
+    "wandb",
+    "omegaconf",
+    "pandas",
+    "ninja",
+    "tensorboard>=2.20.0",
+    "setuptools<82",
+    "flash-attn>=2.8.3",
+    "deepspeed>=0.18.9",
+]
+
+[tool.uv]
+package = false
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }

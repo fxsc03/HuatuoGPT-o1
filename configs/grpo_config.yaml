@@ -1,0 +1,96 @@
+# ============================================================
+# verl GRPO config template for HuatuoGPT-o1
+# Generated / overridden at runtime by GRPO_stage2.py.
+# Can also be used directly with verl's Hydra entry point:
+#   python -m verl.trainer.main_ppo \
+#       --config-path /path/to/configs \
+#       --config-name grpo_config
+# ============================================================
+
+trainer:
+  total_epochs: -1                      # unused; driven by total_training_steps
+  total_training_steps: 20000
+  project_name: HuatuoGPT-o1-GRPO
+  experiment_name: medical_grpo_8b
+  logger:
+    - console
+    - wandb
+  default_local_dir: ./grpo_ckpts/medical_grpo_8b
+  default_hdfs_dir: ~
+  save_freq: 200                        # save checkpoint every N steps
+  test_freq: 100                        # run eval every N steps
+
+data:
+  train_files: ./data/grpo_train.parquet
+  val_files:   ./data/grpo_eval.parquet
+  train_batch_size: 256                 # number of prompts per global update step
+  max_prompt_length: 512
+  max_response_length: 4096
+  return_raw_input_ids: true
+  return_raw_chat: true
+
+actor_rollout_ref:
+
+  model:
+    path: FreedomIntelligence/HuatuoGPT-o1-8B
+    enable_gradient_checkpointing: true
+    use_remove_padding: true            # remove padding tokens before attention
+
+  actor:
+    strategy: fsdp                      # FSDP for actor parameter sharding
+    optim:
+      lr: 1.0e-6
+      weight_decay: 0.01
+      warmup_steps: 10
+      lr_scheduler_type: cosine
+    # ppo_mini_batch_size = train_batch_size × grpo_group_size
+    # (verl processes all group samples in one mini-batch)
+    ppo_mini_batch_size: 2048
+    ppo_micro_batch_size: 4             # per-GPU micro batch for backward pass
+    use_kl_loss: true
+    kl_loss_coef: 0.001
+    kl_loss_type: low_var_kl           # numerically stable KL approximation
+    entropy_coeff: 0.001
+    clip_ratio: 0.2                     # PPO-style clipping for the surrogate loss
+    fsdp_config:
+      param_offload: false
+      grad_offload: false
+      optimizer_offload: false
+
+  rollout:
+    name: vllm                          # use vLLM for fast generation
+    temperature: 0.8
+    top_p: 0.95
+    top_k: -1
+    n: 8                                # G = group size (responses per prompt)
+    max_model_len: 4608                 # max_prompt_length + max_response_length
+    gpu_memory_utilization: 0.85
+    tensor_model_parallel_size: 1       # increase for larger models (70B → 4)
+    ignore_eos: false
+    enforce_eager: false
+    free_cache_engine: true             # release vLLM KV cache after rollout
+
+  ref:
+    strategy: fsdp
+    fsdp_config:
+      param_offload: true               # offload ref params to CPU to save VRAM
+    log_prob_micro_batch_size: 4
+
+algorithm:
+  adv_estimator: grpo                   # GRPO (no value model required)
+  kl_ctrl:
+    type: fixed
+    kl_coef: 0.001
+  # "batch" normalises advantages across all B×G samples in the step
+  adv_normlize_type: batch
+
+reward_model:
+  enable: true
+  reward_manager: grpo_utils.grpo_reward_medo1.MedicalRewardManager
+  reward_kwargs:
+    reward_model_path: FreedomIntelligence/medical_o1_verifier_3B
+    max_reward_length: 4000
+
+resource_pool_manager:
+  process_on_nodes:
+    - 8                                 # GPU count on each node

@@ -1,0 +1,58 @@
+# --- local artifacts (huge, never commit) ---
+/data/
+/output_data/
+/models/
+/ckpts/
+/grpo_ckpts/
+/train_logs/
+/trainlog/
+/wandb/
+/runs/
+
+# --- python envs ---
+/.venv/
+/.venv312/
+/__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+
+# --- model / dataset binary blobs (size & 100MB GitHub limit) ---
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+
+# --- logs ---
+*.log
+wandb-*.log
+
+# --- editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+
+# --- old git history backups (do not commit) ---
+.git.backup-*/
+
+# --- personal/private scripts that contained secrets ---
+mypo.sh
+.env
+.env.*
+
+# --- noise files accidentally committed before ---
+=0.13.0
+=0.43.0
+"\nsft-data-416.log"
+需求文档.txt
+
+# --- big data dumps that should NOT live in git ---
+cot_ready_data.json
+evaluation/Qwen2.5-7B-*eval_data_api*.json
+evaluation/result_Qwen2.5-7B-*eval_data_api*.json

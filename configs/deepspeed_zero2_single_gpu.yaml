@@ -1,0 +1,17 @@
+compute_environment: LOCAL_MACHINE
+distributed_type: DEEPSPEED
+deepspeed_config:
+  gradient_accumulation_steps: 8
+  gradient_clipping: 1.0
+  offload_optimizer_device: cpu        # 优化器状态卸到 CPU，节省显存
+  offload_param_device: none
+  zero3_init_flag: false
+  zero_stage: 2                        # 单卡用 ZeRO-2 即可，ZeRO-3 需多卡
+  bf16:
+    enabled: true
+machine_rank: 0
+main_training_function: main
+mixed_precision: bf16
+num_machines: 1
+num_processes: 1                       # 单卡
+use_cpu: false
